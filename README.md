@@ -8,6 +8,7 @@ By addressing key barriers such as affordability, accessibility, and lack of awa
 
 
 WORKFLOW
+![image](https://github.com/user-attachments/assets/e74a4128-2fe9-4b7d-9501-77e28e39f715)
 
 
 Login --> Dashboard
