@@ -7,7 +7,7 @@ from groq import Groq
 
 # Initialize the Groq client
 client = Groq(
-    api_key="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"
+    api_key=""
 )
 
 # Set up the Flask app

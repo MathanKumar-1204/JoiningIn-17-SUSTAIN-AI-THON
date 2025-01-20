@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
           // Navigate to DashboardPage on successful login
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => DashboardPage()),
+            MaterialPageRoute(builder: (context) => DashboardPage(username: username)),
           );
         } else {
           _showMessage('Invalid username or password.');

@@ -2,12 +2,21 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS  # Import CORS
 import joblib
 import pandas as pd
+from datetime import datetime
 
 from groq import Groq
+import firebase_admin
+from firebase_admin import credentials, db
+
+# Initialize Firebase Admin SDK (ensure you have your service account JSON)
+cred = credentials.Certificate("emote-2aaca-firebase-adminsdk-fbsvc-186a7bd101.json")
+firebase_admin.initialize_app(cred, {
+    'databaseURL': ''
+})
 
 # Initialize the Groq client
 client = Groq(
-    api_key="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"
+    api_key=""
 )
 
 # Set up the Flask app
@@ -27,7 +36,7 @@ def ask(user_input):
         "role": "user",
         "content": user_input
     })
-    
+
     try:
         chat_completion = client.chat.completions.create(
             messages=conversation_history,
@@ -52,68 +61,25 @@ def ask(user_input):
         print(f"Error calling Groq API: {str(e)}")
         return "Sorry, I encountered an error."
 
-@app.route('/get_stat', methods=['POST'])
-def get_stat():
-    try:
-        # Load the trained models
-        model_stress = joblib.load('/path_to_models/stress_model.pkl')
-        model_anxiety = joblib.load('/path_to_models/anxiety_model.pkl')
-        model_depression = joblib.load('/path_to_models/depression_model.pkl')
-
-        # Load the label encoders
-        label_encoder_stress = joblib.load('/path_to_models/label_encoder_stress.pkl')
-        label_encoder_anxiety = joblib.load('/path_to_models/label_encoder_anxiety.pkl')
-        label_encoder_depression = joblib.load('/path_to_models/label_encoder_depression.pkl')
-
-        # Parse input data
-        data = request.json
-        custom_data_list = data.get('stats', [])
-        if not custom_data_list:
-            return jsonify({"error": "No data provided"}), 400
-
-        # Create DataFrame from custom data
-        custom_data = pd.DataFrame(custom_data_list)
-
-        # Make predictions
-        stress_pred = model_stress.predict(custom_data)
-        anxiety_pred = model_anxiety.predict(custom_data)
-        depression_pred = model_depression.predict(custom_data)
-
-        # Decode the predictions
-        stress_pred_label = label_encoder_stress.inverse_transform(stress_pred)[0]
-        anxiety_pred_label = label_encoder_anxiety.inverse_transform(anxiety_pred)[0]
-        depression_pred_label = label_encoder_depression.inverse_transform(depression_pred)[0]
-
-        # Return the results
-        result = {
-            "Stress Prediction": stress_pred_label,
-            "Anxiety Prediction": anxiety_pred_label,
-            "Depression Prediction": depression_pred_label
-        }
-
-        return jsonify(result)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route('/get_answer', methods=['POST'])
 def get_answer():
     data = request.json
     user_message = data.get('question', '')
-    
+
     print("User question received:", user_message)  # Debugging step
-    
+
     # Use the Groq-based AI model to get a response
     ai_response = ask(user_message)
-    
+
     print("AI Response to be sent:", ai_response)  # Debugging step
-    
+
     return jsonify({'answer': ai_response})
 
 @app.route('/submit', methods=['POST'])
 def submit():
     data = request.get_json()
-    answers = data['answers']
+    answers = data.get('answers')
+    username = data.get('username')
 
     # Define answer mapping and threshold for "depressed"
     answer_map = {
@@ -125,18 +91,26 @@ def submit():
     }
 
     # Convert the answers to numerical values
-    scores = [answer_map[answer] for answer in answers]
-
-    # Simple rule: if the total score exceeds a threshold, classify as "depressed"
+    scores = [answer_map.get(answer, 0) for answer in answers]
     threshold = 40  # You can adjust this threshold
     total_score = sum(scores)
 
-    if total_score > threshold:
-        result = "You are depressed"
-    else:
-        result = "You are fine "
+    # Determine the result
+    result = "You are depressed" if total_score > threshold else "You are fine"
 
-    return jsonify({"prediction": result})
+    # Get the current date
+    current_date = datetime.now().strftime("%d-%m-%Y")
+
+    # Save result to Firebase
+    try:
+        ref = db.reference(f'users/{username}/{current_date}')
+        ref.set({
+            'score': total_score,
+            'state': result
+        })
+        return jsonify({"message": "Result saved successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(debug=True)

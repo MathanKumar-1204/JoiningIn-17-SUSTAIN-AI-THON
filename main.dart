@@ -5,17 +5,9 @@ import 'login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Manual Firebase initialization
-  await Firebase.initializeApp(
-    options: FirebaseOptions(
-        // Include database URL for Realtime Database
-        ),
-  );
-
+  await Firebase.initializeApp(); // Ensure only one initialization here.
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

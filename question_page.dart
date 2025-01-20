@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class QuestionPage extends StatefulWidget {
+  final String username;
+
+  QuestionPage({required this.username});
+
   @override
   _QuestionPageState createState() => _QuestionPageState();
 }
@@ -94,32 +98,33 @@ class _QuestionPageState extends State<QuestionPage>
   }
 
   Future<void> _submitAnswers() async {
-    final url = Uri.parse('http://127.0.0.1:5000/submit');
-    final answerList = answers.map((e) => e ?? '').toList();
+  final url = Uri.parse('https://807b-2409-40f4-a2-fcd3-4994-6fb3-e7b3-7b08.ngrok-free.app/submit');
+  final answerList = answers.map((e) => e ?? '').toList();
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'answers': answerList}),
-      );
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'answers': answerList, 'username': widget.username}),
+    );
 
-      if (response.statusCode == 200) {
-        final result = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['prediction'] ?? 'Submission successful!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${response.body}')),
-        );
-      }
-    } catch (e) {
+    if (response.statusCode == 200) {
+      final result = json.decode(response.body);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit answers: $e')),
+        SnackBar(content: Text(result['message'] ?? 'Submission successful!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${response.body}')),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to submit answers: $e')),
+    );
   }
+}
+
 
   @override
   void dispose() {

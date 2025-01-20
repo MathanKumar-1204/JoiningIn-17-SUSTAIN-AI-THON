@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';  // Import LoginPage
-import 'question_page.dart';  // Import QuestionPage
+import 'package:firebase_database/firebase_database.dart'; // Firebase Realtime Database
+import 'login_page.dart'; // Import LoginPage
+import 'question_page.dart'; // Import QuestionPage
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -11,12 +12,22 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _professionController = TextEditingController();
 
-  void _registerUser() {
-    // ignore: unused_local_variable
+  final DatabaseReference _database = FirebaseDatabase.instance.ref('users'); // Reference to "users"
+
+  void _registerUser() async {
     final String username = _usernameController.text.trim();
     final String password = _passwordController.text;
     final String confirmPassword = _confirmPasswordController.text;
+    final String profession = _professionController.text.trim();
+
+    if (username.isEmpty || password.isEmpty || profession.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('All fields are required')),
+      );
+      return;
+    }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -25,21 +36,44 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Simulate registration success
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Registration successful!')),
-    );
-    
-    // Navigate to QuestionPage after registration
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => QuestionPage()),
-    );
+    try {
+      // Check if username already exists
+      DataSnapshot snapshot = await _database.child(username).get();
+      if (snapshot.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Username already exists')),
+        );
+        return;
+      }
 
-    // Clear inputs after registration
-    _usernameController.clear();
-    _passwordController.clear();
-    _confirmPasswordController.clear();
+      // Add user data to Firebase Realtime Database with username as the key
+      await _database.child(username).set({
+        'username': username,
+        'password': password,
+        'profession': profession,
+      });
+
+      // Registration successful message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration successful!')),
+      );
+
+      // Navigate to QuestionPage with the username
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => QuestionPage(username: username)),
+      );
+
+      // Clear input fields
+      _usernameController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      _professionController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   @override
@@ -145,6 +179,22 @@ class _RegisterPageState extends State<RegisterPage> {
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: 'Confirm your password',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Profession',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                      TextField(
+                        controller: _professionController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your profession',
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(

@@ -4,15 +4,18 @@ import 'community.dart';
 import 'question_page.dart';
 import 'chatbot.dart';
 import 'goal_tracker.dart';
-import 'camera.dart';
+// import 'camera.dart';
+
 class Sidebar extends StatelessWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
+  final String username;
 
   const Sidebar({
     super.key,
     required this.isDarkMode,
     required this.toggleTheme,
+    required this.username,
   });
 
   @override
@@ -26,8 +29,8 @@ class Sidebar extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDarkMode ? Colors.black54 : Colors.blue,
             ),
-            child: const Text(
-              'Navigation Menu',
+            child: Text(
+              'Welcome, $username!',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -38,7 +41,7 @@ class Sidebar extends StatelessWidget {
             context,
             title: 'Dashboard',
             icon: Icons.dashboard,
-            targetPage:  DashboardPage(),
+            targetPage: DashboardPage(username: username),
           ),
           _buildListTile(
             context,
@@ -50,26 +53,26 @@ class Sidebar extends StatelessWidget {
             context,
             title: 'Analysis',
             icon: Icons.analytics,
-            targetPage: QuestionPage(),
+            targetPage: QuestionPage(username: username),
           ),
-          _buildListTile(   
+          _buildListTile(
             context,
             title: 'Chatbot',
             icon: Icons.chat,
             targetPage: const ChatbotPage(),
           ),
-           _buildListTile(
+          _buildListTile(
             context,
             title: 'GoalTracker',
             icon: Icons.flag,
             targetPage: GoalTrackerPage(),
           ),
-          _buildListTile(
-            context,
-            title: 'Camera',
-            icon: Icons.flag,
-            targetPage: EmotionDetectionPage(),
-          ),
+          // _buildListTile(
+          //   context,
+          //   title: 'Camera',
+          //   icon: Icons.flag,
+          //   targetPage: EmotionDetectionPage(),
+          // ),
           ListTile(
             leading: Icon(
               Icons.logout,
